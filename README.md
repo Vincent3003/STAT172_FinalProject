@@ -5,6 +5,8 @@ This project analyzes demographic and employment factors correlating with high-i
 
 **Data:**
 The Adult Income Census dataset from Kaggle is used. This contains census data on 32,561 individuals, including income level and variables like age, occupation, education level, marital status, etc.
+- adult.csv: the original Adult dataset from Kaggle
+- adult_1.csv: the cleaned Adult dataset so can use them easily in SAS
 
 **Methods:**
 The analysis workflow includes the following:
