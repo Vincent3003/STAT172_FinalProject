@@ -10,6 +10,7 @@ library(RColorBrewer)
 library(randomForest)
 library(dplyr)
 library(logistf)
+library(glmnet) # for fitting lasso, ridge regressions (GLMs)
 library(lubridate) #for easily manipulating dates
 
 
@@ -28,9 +29,6 @@ colnames(adult) <- c("Age", "WorkingClass", "Final_Weight", "Education_Level", "
 
 # Change  ? to NA value
 adult[adult == "?"] = NA
-summary(adult)    # look at a summary of the data 
-str(adult)        # look at the structure of the data
-colnames(adult)   # get the column names of the dataset
 
 # Omit missing adult1 records
 adult1 <- na.omit(adult)
@@ -38,6 +36,7 @@ head(adult1)
 
 # Add one more column for Net Gain
 adult <- mutate(adult, Net_Capital = Capital_Gain - Capital_Loss)
+
 adult1 <- mutate(adult1, Net_Capital = Capital_Gain - Capital_Loss)
 
 # create a binary variable for Income
@@ -85,10 +84,18 @@ adult1 <- mutate(adult1,
                  )
 )
 
+adult3 <- as.data.frame(unclass(adult1),                     # Convert all columns to factor
+                      stringsAsFactors = TRUE)
+
 # Drop columns in a datset
 adult2 = subset(adult1, select = -c(Final_Weight, Education_Number, Relationship, Capital_Gain, 
                                     Capital_Loss, Education_Level, Occupation, WorkingClass,
                                     Native_Country)) 
+adult2.2 = subset(adult3, select = -c(Final_Weight, Education_Number, Relationship, Capital_Gain, 
+                                   Capital_Loss, Education_Level, Occupation, WorkingClass,
+                                   Native_Country)) 
+# adult2 has chr and int variables only but adult2.2 has only Factor and int
+
 str(adult2)
 summary(adult2)
 head(adult2)
@@ -136,11 +143,11 @@ RNGkind(sample.kind = "default")
 set.seed(2291352)
 
 # create a vector of id's that will be put in the training data
-train.ids <- sample(x = 1: nrow(adult2), size = floor(0.8 * nrow(adult2)))
+train.ids <- sample(x = 1: nrow(adult2.2), size = floor(0.8 * nrow(adult2.2)))
 # create training data set
-train.df <- adult2[train.ids, ]
+train.df <- adult2.2[train.ids, ]
 # create testing data set
-test.df <- adult2[-train.ids, ]
+test.df <- adult2.2[-train.ids, ]
 
 ##########################  CLASSFICATION TREE FITTING / INTERPRETATION ########################## 
 set.seed(172172172)   # for reproducibility
@@ -168,7 +175,7 @@ rocCurve <- roc(response = test.df$Income,#supply truth
 plot(rocCurve,print.auc = TRUE, print.thres = TRUE)
 
 pi_star <- coords(rocCurve, "best", ret = "threshold")$threshold[1]
-test.df$result_pred <- as.factor(ifelse(pi_hat > pi_star, ">50K", "<=50K"))
+test.df$result_prediction <- as.factor(ifelse(pi_hat > pi_star, ">50K", "<=50K"))
 
 ##########################  RANDOM FOREST ########################## 
 # BASELINE FOREST #
@@ -197,7 +204,7 @@ ggplot(data = keeps) +
 #My results suggest an m of 2 would be ideal for minimizing OOB error
 final_forest <- randomForest(Income ~ .,
                              ntree = 500,
-                             mtry = 2,
+                             mtry = 3,
                              data = train.df,
                              type = 'classification',
                              importance = TRUE)
@@ -220,12 +227,15 @@ ggplot(data = vi) +
   coord_flip() +
   labs( x = "Variable Name",y = "Importance")
 
-
+# adult2 has chr and int variables only but adult2.2 has only Factor and int
 adult2$Income_bin <- ifelse(adult2$Income == ">50K", 1, 0)
+adult2.2$Income_bin <- ifelse(adult2.2$Income == ">50K", 1, 0)
+
 
 m1 <- glm(Income_bin ~  Marital_Status , data = adult2, family = binomial)
 AIC(m1)   # 27280.32
 BIC(m1)   # 27338.52
+
 
 m2 <- glm(Income_bin ~  Marital_Status + Net_Capital, data = adult2, family = binomial)
 AIC(m2)   # 25190.53
@@ -241,40 +251,174 @@ m4 <- glm(Income_bin ~  Marital_Status + Net_Capital + EducationLevel_clean + Ag
 AIC(m4)   # 22035.06
 BIC(m4)   # 22143.15
 
-m5 <- glm(Income_bin ~  Marital_Status + Net_Capital + EducationLevel_clean + Age + Sex, data = adult2, 
-          family = binomial)
-AIC(m5)   # 21996.68
-BIC(m5)   # 22113.08
-
-m6 <- glm(Income_bin ~  Marital_Status + Net_Capital + EducationLevel_clean + Age + Sex + Hrs_per_Week, 
+m5 <- glm(Income_bin ~  Marital_Status + Net_Capital + EducationLevel_clean + Age + Occupation_clean, 
           data = adult2, 
           family = binomial)
-AIC(m6)   # 21587.98
-BIC(m6)   # 21712.7
+AIC(m5)   # 21518.23
+BIC(m5)   # 21684.52
 
-m7 <- glm(Income_bin ~  Marital_Status + Net_Capital + EducationLevel_clean + Age + Sex + Hrs_per_Week 
-          + WorkingClass_clean, 
+m6 <- glm(Income_bin ~  Marital_Status + Net_Capital + EducationLevel_clean + Age + Occupation_clean 
+          + Hrs_per_Week, 
           data = adult2, 
           family = binomial)
-AIC(m7)   # 21559.17
-BIC(m7)   # 21708.82
+AIC(m6)   # 21150.87
+BIC(m6)   # 21325.47
 
-m8 <- glm(Income_bin ~  Marital_Status + Net_Capital + EducationLevel_clean + Age + Sex + Hrs_per_Week +
-            WorkingClass_clean + Race, 
+m7 <- glm(Income_bin ~  Marital_Status + Net_Capital + EducationLevel_clean + Age + Occupation_clean 
+          + Hrs_per_Week + Sex, 
           data = adult2, 
           family = binomial)
-AIC(m8)   # 21534.11 
-BIC(m8)   # 21717.02
-# Whoops, whoops m8 is the smallest AIC
-summary(m8)
+AIC(m7)   # 21143.01
+BIC(m7)   # 21325.92
 
-m_firth <- logistf(Income_bin ~  Marital_Status + Net_Capital + EducationLevel_clean + Age + Sex + Hrs_per_Week +
-                     WorkingClass_clean + Race, family = binomial,
+m8 <- glm(Income_bin ~  Marital_Status + Net_Capital + EducationLevel_clean + Age + Occupation_clean
+          + Hrs_per_Week + Sex + WorkingClass_clean, 
+          data = adult2, 
+          family = binomial)
+AIC(m8)   # 21101.64 
+BIC(m8)   # 21309.5
+
+m9 <- glm(Income_bin ~  Marital_Status + Net_Capital + EducationLevel_clean + Age + Occupation_clean
+          + Hrs_per_Week + Sex + WorkingClass_clean + Race, 
+          data = adult2, 
+          family = binomial)
+AIC(m9)   # 21084.48 
+BIC(m9)   # 21325.6
+
+# Whoops, whoops m9 is the smallest AIC
+summary(m9)
+
+m_firth <- logistf(Income_bin ~ Marital_Status + Net_Capital + EducationLevel_clean + Age + 
+                     Occupation_clean + Hrs_per_Week + Sex + WorkingClass_clean + Race,
                    data = adult2)
 summary(m_firth) 
 coef(m_firth)
 exp(coef(m_firth))
 
+####################### Data Mining ###############################
+RNGkind(sample.kind = "default")
+set.seed(23591)
+train.idx <- sample(x = 1:nrow(adult2), size = floor(.7*nrow(adult2)))
+train_data <- adult2[train.idx,]
+test.data <- adult2[-train.idx,]
+
+#Fit a traditional logistic regression fit with MLE
+lr_mle <- glm(Income_bin ~ Marital_Status + Net_Capital + EducationLevel_clean + Age + 
+                Occupation_clean + Hrs_per_Week + Sex + WorkingClass_clean + Race, 
+              data = train_data, 
+              family = binomial(link = "logit"))
+
+#look at the coefficients on the logistic regression
+coef(lr_mle)
+exp(coef(lr_mle))
+lr_mle %>% coef %>% exp
 
 
+#build x matrix for the lasso regression
+#"one-hot" codes any factors/characters in your data
+x <- model.matrix(Income_bin ~  Marital_Status + Net_Capital + EducationLevel_clean + Age + 
+                    Occupation_clean + Hrs_per_Week + Sex + WorkingClass_clean + Race
+                  , data = train_data)[,-1] 
+# the -1 takes out the intercept
+
+#create vector of 0/1 for y
+y <- as.vector(train_data$Income_bin)
+#alpha = 1 is going to fit a lasso
+#alpha = 0 is going to fit a ridge (they shrink differently)
+
+lr_lasso <- glmnet(x=x, y=y, family = binomial(link = logit), alpha = 1)
+summary(lr_lasso) 
+
+# the glmnet function fit 100 different logistic regression models;
+# one for each different "lambda" value.
+# each model has a different coefficient vector, that varies
+# because of how big lambda is
+
+#our task: pick the lambda that maximizes out of sample predictive accuracy
+
+lr_lasso$lambda[1] #first lambda tried
+lr_lasso$beta[,1] #for that value of lambda, here is the corresponding beta vector
+#for a lambda of 0.01, all the coefficients are 0
+
+lr_lasso$lambda[60] #60th value of lambda tried
+lr_lasso$beta[,60] #for that value of lambda, here is the corresponding beta vector
+#way more numbers! now lambda is 0.0007 (so smaller) and coefficients could grow
+#note: as lambda ---> 0, the lasso regression will approach MLE that we fit first.
+
+plot(lr_lasso, xvar="lambda", label = TRUE)
+
+#what have we done/accomplished at this point?
+#nothing really. 
+#we need to use cross validation measures to tune
+#lambda. we will choose the lambda that minimizes
+#out of sample error.
+
+
+lr_lasso_cv = cv.glmnet(x,y, family = binomial(link = "logit"), alpha = 1)
+
+plot(lr_lasso_cv)
+
+lr_lasso_cv$lambda.min #the lambda that minimizes CV error
+lr_lasso_cv$lambda.1se # will be a larger penalty (more 0 coefficients)
+
+#see the coefficients for the model that minimizes OOE
+lr_lasso_coefs<- coef(lr_lasso_cv, s="lambda.min") %>% as.matrix()
+lr_lasso_coefs
+
+
+#Quantify model performance for the lasso and MLE logistic regression models. Make ROC for both. 
+# Choose best model.
+
+#model.matrix code not necessary to make MLE predictions,
+#but it is necessary for the lasso
+x_test <- model.matrix(Income_bin ~ Marital_Status + Net_Capital + EducationLevel_clean + Age + 
+                         Occupation_clean + Hrs_per_Week + Sex + WorkingClass_clean + Race,
+                        data = test.data)[,-1]
+
+#you'll see type = "response" on both predict functions
+#this makes sure predict() gives us probabilities instead of log odds/ linear predictor scale
+
+test.data <- test.data %>%
+  mutate(mle_pred = predict(lr_mle, test.data, type = "response"),
+         lasso_pred = predict(lr_lasso_cv, x_test, s = "lambda.min", type = "response")[,1])
+
+
+cor(test.data$mle_pred, test.data$lasso_pred)
+#the predictions from the two logistic regerssion models 
+#(MLE vs lasso) are positively correlated but certainly
+#not the same
+
+test.data %>%
+  ggplot() +
+  geom_point(aes(x = mle_pred, y = lasso_pred)) +
+  geom_abline(aes(intercept = 0, slope = 1))
+
+#so we know they are different. but which is better?
+
+mle_rocCurve <- roc(response = as.factor(test.data$Income_bin),#supply truth
+                      predictor = test.data$mle_pred,#supply predicted PROBABILITIES
+                      levels = c("0", "1") #(negative, positive)
+)
+
+plot(mle_rocCurve, print.thres = TRUE,print.auc = TRUE)
+#AUC = 0.696
+
+lasso_rocCurve   <- roc(response = as.factor(test.data$Income_bin),#supply truth
+                        predictor = test.data$lasso_pred,#supply predicted PROBABILITIES
+                        levels = c("0", "1") #(negative, positive)
+)
+
+plot(lasso_rocCurve, print.thres = TRUE,print.auc = TRUE)
+#AUC = 0.774
+
+str(lasso_rocCurve)
+
+ggplot() +
+  geom_line(aes(x = 1-mle_rocCurve$specificities, y = mle_rocCurve$sensitivities), colour = "darkorange1") +
+  geom_text(aes(x = .75, y = .75, 
+                label = paste0("MLE AUC = ",round(mle_rocCurve$auc, 3))), colour = "darkorange1")+
+  geom_line(aes(x = 1-lasso_rocCurve$specificities, y = lasso_rocCurve$sensitivities), colour = "cornflowerblue")+
+  geom_text(aes(x = .75, y = .65, 
+                label = paste0("Lasso AUC = ",round(lasso_rocCurve$auc, 3))), colour = "cornflowerblue") +
+  labs(x = "1-Specificity", y = "Sensitivity")
 
