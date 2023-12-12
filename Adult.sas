@@ -72,14 +72,16 @@ run;
 
 /* GLM:  model */
 proc logistic data = adult;
-class WorkingClass_clean EducationLevel_clean sex Race Marital_Status Occupation_clean / param = reference;
-model income_bin (event='1') = WorkingClass_clean Net_Capital Race Age EducationLevel_clean sex Hrs_per_Week Marital_Status Occupation_clean /clparm=both;
+class Marital_Status EducationLevel_clean Occupation_clean Sex WorkingClass_clean Race / param = reference;
+model income_bin (event='1') = Marital_Status Net_Capital EducationLevel_clean Age Occupation_clean Hrs_per_Week Sex WorkingClass_clean Race /clparm=both;
 run;
 
 /* Ask SAS to look into both confident intervals (Wald and Likelihood) */
 proc logistic data = adult;
 class WorkingClass_clean EducationLevel_clean sex Race Marital_Status Occupation_clean / param = reference;
-model income_bin (event='1') = Age WorkingClass_clean Net_Capital Race EducationLevel_clean sex Hrs_per_Week Marital_Status Occupation_clean /clparm=both firth;
+model income_bin (event='1') = Marital_Status Net_Capital EducationLevel_clean Age 
+                     Occupation_clean Hrs_per_Week Sex WorkingClass_clean Race 
+                     /clparm=both firth;
 output out = diagrams predicted = pred xbeta = line_pred;
 run;
 
