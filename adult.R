@@ -202,7 +202,7 @@ final_forest <- randomForest(Income ~ .,
                              type = 'classification',
                              importance = TRUE)
 
-pi_hat_forest<- predict(ctree_adult2, test.df, type = "prob")[,">50K"]
+pi_hat_forest<- predict(final_forest, test.df, type = "prob")[,">50K"]
 rocCurve_forest <- roc(response = test.df$Income,#supply truth
                 predictor = pi_hat_forest,#supply predicted PROBABILITIES)
                 levels = c("<=50K", ">50K")) #(negative, positive)
