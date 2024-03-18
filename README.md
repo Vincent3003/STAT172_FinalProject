@@ -13,23 +13,18 @@ The Adult Income Census dataset from Kaggle is used. This contains census data o
 
 **Methods:**
 The analysis workflow includes the following:
-- Data cleaning in R
+- Data cleaning in R to ensure accuracy and consistency.
 - Visualizations and exploratory analysis
-- Predictive modeling with decision trees and random forests
-- Statistical analysis and interpretation using generalized linear models
-
-**Data cleaning in R**
-- Visualizations and exploratory analysis
-- Predictive modeling with decision trees and random forests
-- Statistical analysis and interpretation using generalized linear models
+- Comprehensive visualizations and exploratory analysis to unveil trends and patterns.
+- Advanced predictive modeling employing decision trees and random forests for insightful predictions.
 
 **Key Results**
-- Key factors driving high-income status identified through model importance plots
-- Interpretations of model coefficients to quantify effects
-- Identification of customer segments based on demographics
+- Identification of pivotal factors influencing high-income status elucidated through model importance plots.
+- Quantification of effects through interpretation of model coefficients, providing actionable insights.
+- Segmentation of customer demographics to target specific high-income segments effectively.
 
 **Recommendations**
-- Targeted skincare offerings tailored for high-income segments
-- Refined recommender system based on influential variables
+- Tailored skincare offerings designed specifically for high-income segments, enhancing market penetration and revenue growth.
+- Enhancement of the recommender system by incorporating influential variables, ensuring personalized recommendations for customers.
 
 **Contact:** For any questions, please contact chi.dang@drake.edu
