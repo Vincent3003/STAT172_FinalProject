@@ -18,12 +18,12 @@ The analysis workflow includes the following:
 - Comprehensive visualizations and exploratory analysis to unveil trends and patterns.
 - Advanced predictive modeling employing decision trees and random forests for insightful predictions.
 
-**Key Results**
+**Key Results:**
 - Identification of pivotal factors influencing high-income status elucidated through model importance plots.
 - Quantification of effects through interpretation of model coefficients, providing actionable insights.
 - Segmentation of customer demographics to target specific high-income segments effectively.
 
-**Recommendations**
+**Recommendations:**
 - Tailored skincare offerings designed specifically for high-income segments, enhancing market penetration and revenue growth.
 - Enhancement of the recommender system by incorporating influential variables, ensuring personalized recommendations for customers.
 
